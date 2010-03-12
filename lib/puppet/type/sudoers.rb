@@ -83,9 +83,6 @@ order matters!!
     desc "list of hosts for user spec"
   end
 
-  newproperty(:runas, :array_matching => :all) do
-    desc "user to run commands as"
-  end
   newproperty(:commands, :array_matching => :all) do
     desc "commands to run"
   end
