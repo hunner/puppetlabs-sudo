@@ -18,13 +18,13 @@ Puppet::Type.type(:sudoers).provide(
   commands :visudo => 'visudo'
 
   # this is just copied from hosts
-#  text_line :comment, :match => %r{^#}, :post_parse => proc { |record|
-#    # we determine the name from the comment above user spec lines
-#    if record[:line] =~ /Puppet Name: (.+)\s*$/
+  text_line :comment, :match => %r{^#}, :post_parse => proc { |record|
+    # we determine the name from the comment above user spec lines
+    if record[:line] =~ /Puppet Name: (.+)\s*$/
 ## ok, we set record name, but how is this applied to the next line?
-#      record[:name] = $1
-#    end
-#  } 
+      record[:name] = $1
+    end
+  } 
 
   text_line :blank, :match => /^\s*$/;
 
@@ -58,9 +58,9 @@ Puppet::Type.type(:sudoers).provide(
         #puts hash.to_yaml
       # create records for user specs
       elsif (hash[:line] =~ /^(.*)?=(.*)$/)
+        #hash = Puppet::Provider::Sudoers::Parsed.parse_user_spec($1, $2)
 puts hash[:line]
         # should name already be set when get get here?
-        #hash = Puppet::Provider::Sudoers::Parsed.parse_user_spec($1, $2)
         lhs = $1
         rhs = $2
         hash[:type] = 'spec'
@@ -72,7 +72,7 @@ puts hash[:line]
         hash[:hosts] = Array.new
         lhs_array.each do |element|
 puts "!! #{element}"
-          # all elements will be a single string, except the one that splits users and hosts
+        # all elements will be a single string, except the one that splits users and hosts
           if element =~ /^\s*(\S+)\s+(\S+)\s*$/
             user, host  = $1, $2
             raise Exception, 'found more than one whitespace delin when parsing left hand side of user spec' if currentsymbol==:hosts
@@ -82,17 +82,43 @@ puts "!! #{element}"
             currentsymbol=:hosts
             hash[currentsymbol] << host.gsub(/\s/, '')
           elsif element =~ /\s*\S+\s*/
-            
             hash[currentsymbol] << element.gsub(/\s/, '')
+          else 
+            raise ArgumentError, "unexpected line #{hash[:line]}" 
           end
         end
-puts hash.to_yaml
-      else 
-        raise ArgumentError, "unexpected line #{hash[:line]}" 
       end
+      puts hash.to_yaml
     }
 
 #  def self.parse_user_spec(lhs, rhs) 
+#puts hash[:line]
+#    # should name already be set when get get here?
+#    #lhs = $1
+#    #rhs = $2
+#    hash[:type] = 'spec'
+#    hash[:commands] = rhs.gsub(/\s/, '').split(',')
+#    lhs_array = lhs.split(',')  
+#    # every element will be a user until the hit the delim
+#    currentsymbol = :users
+#    hash[:users] = Array.new
+#    hash[:hosts] = Array.new
+#    lhs_array.each do |element|
+#puts "!! #{element}"
+#    # all elements will be a single string, except the one that splits users and hosts
+#    if element =~ /^\s*(\S+)\s+(\S+)\s*$/
+#      user, host  = $1, $2
+#      raise Exception, 'found more than one whitespace delin when parsing left hand side of user spec' if currentsymbol==:hosts
+#      # sweet we found the delim between user and host
+#      hash[currentsymbol] << user.gsub(/\s/, '')
+#      # now everything else will be a host
+#      currentsymbol=:hosts
+#      hash[currentsymbol] << host.gsub(/\s/, '')
+#    elsif element =~ /\s*\S+\s*/
+#      hash[currentsymbol] << element.gsub(/\s/, '')
+#    end
+#    puts hash.to_yaml
+#  end
 #    hash[:type] = 'spec'
 #    hash[:commands] = rhs.gsub(/\s/, '').split(',')
 #    lhs_array = lhs.split(',')  
@@ -111,6 +137,11 @@ puts hash.to_yaml
 #      end
 #    end
 #  end 
+
+  def self.prefetch_hook(records)
+puts "HERE!!!"
+    records
+  end
 
   def self.to_line(hash) 
     puts "\nEntering self.to_line for #{hash[:name]}"
