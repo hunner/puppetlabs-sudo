@@ -1,0 +1,27 @@
+#
+# DO NOT EDIT! This file is managed by Puppet so any changes you make locally will be lost.
+#
+## Command Aliases
+## These are groups of related commands...
+
+## Installation and management of software
+Cmnd_Alias SOFTWARE = /bin/rpm, /usr/bin/up2date, /usr/bin/yum, /sbin/service httpd *, /sbin/service interchange *, /sbin/service puppet *, /sbin/service mvc_cached *
+
+#
+# This flag needs to be off for ControlTier to work:
+#
+# Defaults    requiretty
+Defaults    env_reset
+Defaults    env_keep = "COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR \
+                        LS_COLORS MAIL PS1 PS2 QTDIR USERNAME \
+                        LANG LC_ADDRESS LC_CTYPE LC_COLLATE LC_IDENTIFICATION \
+                        LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC \
+                        LC_PAPER LC_TELEPHONE LC_TIME LC_ALL LANGUAGE LINGUAS \
+                        _XKB_CHARSET XAUTHORITY"
+#
+# User and group based sudo permissions
+#
+
+root	   ALL=(ALL) 	ALL
+%wheel	ALL=(ALL)	ALL
+%interch	ALL=NOPASSWD:  SOFTWARE 	

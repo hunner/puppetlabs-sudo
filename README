@@ -1,0 +1,5 @@
+This is a type and a provider for managing sudoers file.
+
+It doesnt work yet, but it will. still trying to learn how parsedfile works and how much I can push its boundaries.
+
+It will update this README when its ready for consumption.

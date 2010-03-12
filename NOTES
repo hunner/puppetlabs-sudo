@@ -1,0 +1,5 @@
+only properties can be accessed by the parsedfile provider, this sucks.
+
+what is the difference between self.function and function? why must I use self for everything?
+
+I will not support multiline
