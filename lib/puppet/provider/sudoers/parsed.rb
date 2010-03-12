@@ -18,12 +18,14 @@ Puppet::Type.type(:sudoers).provide(
   commands :visudo => 'visudo'
 
   # this is just copied from hosts
-  text_line :comment, :match => %r{^#}, :post_parse => proc { |record|
-    # we determine the name from the comment above user spec lines
-    if record[:line] =~ /Puppet namevar (.+)\s*$/
-      record[:name] = $1
-    end
-  } 
+  text_line :comment, :match => %r{^#}
+
+#, :post_parse => proc { |record|
+#    # we determine the name from the comment above user spec lines
+#    if record[:line] =~ /Puppet namevar (.+)\s*$/
+#      record[:name] = $1
+#    end
+#  } 
 
   text_line :blank, :match => /^\s*$/;
 
@@ -56,11 +58,12 @@ Puppet::Type.type(:sudoers).provide(
       if (hash[:line] =~ /^\s*(User_Alias|Runas_Alias|Host_Alias|Cmnd_Alias)\s+(\S+)\s*=\s*(.+)$/)
         Puppet::Type.type(:sudoers).provider(:parsed).parse_alias($1, $2, $3, hash)
 #      # create records for user specs
-      elsif (hash[:line] =~ /^(.*)?=(.*)$/)
-        Puppet::Type.type(:sudoers).provider(:parsed).parse_user_spec($1, $2, hash)
+       # we only allow one user to be specified.
+      elsif (hash[:line] =~ /^\s*(\S+)(.*)?=(.*)$/)
+        Puppet::Type.type(:sudoers).provider(:parsed).parse_user_spec($1, $2, $3, hash)
 #      # this is just a place holder, I have not implemted Defaults yet
-      elsif (hash[:line] =~ /\s*(Default\S*)\s*(.*)/)
-        hash = "Defaults are fun!!"
+      elsif (hash[:line] =~ /^\s*(Defaults\S*)\s*(.*)$/)
+        Puppet::Type.type(:sudoers).provider(:parsed).parse_defaults($1, $2, hash)
       else 
         raise Exception, "invalid line #{hash[:line]}"
       end
@@ -78,38 +81,40 @@ Puppet::Type.type(:sudoers).provide(
   end
 
   # parse existing user spec lines from sudoers
-  def self.parse_user_spec(lhs, rhs, hash) 
+  def self.parse_user_spec(user, hosts, commands, hash) 
     hash[:type] = 'spec'
-    hash[:commands] = rhs.gsub(/\s/, '').split(',')
-    lhs_array = lhs.split(',')  
-    # every element will be a user until the hit the delim
-    currentsymbol = :users
-    hash[:users] = Array.new
-    hash[:hosts] = Array.new
-    # parsing users and hosts is kind of complicated, sorry
-    lhs_array.each do |element|
-#puts "!! #{element}"
-    # the element that splits users and hosts will be 2 white space delimited strings 
-      if element =~ /^\s*(\S+)\s+(\S+)\s*$/
-        user, host  = $1, $2
-        raise Exception, 'found more than one whitespace delim when parsing left hand side of user spec' if currentsymbol==:hosts
-        # sweet we found the delim between user and host
-        hash[currentsymbol] << user.gsub(/\s/, '')
-        # now everything else will be a host
-        currentsymbol=:hosts
-        hash[currentsymbol] << host.gsub(/\s/, '')
-      elsif element =~ /\s*\S+\s*/
-        hash[currentsymbol] << element.gsub(/\s/, '')
-      else
-        raise Exception, "Malformed user spec line lhs: #{lhs}"
-      end
-    end
+    hash[:name] = user
+    hash[:hosts] = hosts.gsub(/\s/, '').split(',')
+    hash[:commands] = commands.gsub(/\s/, '').split(',')
     hash
+#    lhs_array = lhs.split(',')  
+#    # every element will be a user until the hit the delim
+#    currentsymbol = :users
+#    hash[:users] = Array.new
+#    hash[:hosts] = Array.new
+#    # parsing users and hosts is kind of complicated, sorry
+#    lhs_array.each do |element|
+##puts "!! #{element}"
+#    # the element that splits users and hosts will be 2 white space delimited strings 
+#      if element =~ /^\s*(\S+)\s+(\S+)\s*$/
+#        user, host  = $1, $2
+#        raise Exception, 'found more than one whitespace delim when parsing left hand side of user spec' if currentsymbol==:hosts
+#        # sweet we found the delim between user and host
+#        hash[currentsymbol] << user.gsub(/\s/, '')
+#        # now everything else will be a host
+#        currentsymbol=:hosts
+#        hash[currentsymbol] << host.gsub(/\s/, '')
+#      elsif element =~ /\s*\S+\s*/
+#        hash[currentsymbol] << element.gsub(/\s/, '')
+#      else
+#        raise Exception, "Malformed user spec line lhs: #{lhs}"
+#      end
+#    end
   end 
 
   def self.parse_defaults(default, parameters, hash)
     hash[:name] = default
-    #hash[]=    
+    hash[:parameters] = parameters.gsub(/\s/, '').split(',')
   end
   
   # will use the prefetch_hook to determine if
@@ -117,32 +122,35 @@ Puppet::Type.type(:sudoers).provide(
   # only used for user spec.
   # lot of this code is shameless taken from provider crontab.rb
   #
-  def self.prefetch_hook(records)
-    # store comment name vars when we find them
-    name=nil
-    results = records.each do |record|
-      if(record[:record_type] == :comment)
-        # if we are a namevar comment
-puts "found a comment: #{record.to_yaml}"
-        if record[:name]
-puts "found a comment with :name"
-          name = record[:name]
-          record[:skip] = true
-        end
-       # if we are a spec record, check the namevar
-      elsif record[:type] == 'spec'
-        if name
-puts "adding to a record"
-          record[:name] = name
-          name = nil
-        else
-          puts "spec record not created by puppet"
-          # probably a pre-exting record not created by puppet
-        end 
-      end
-    end.reject{|record| record[:skip]}
-    results
-  end
+
+# I could use prefetch_hook to support multoi-line entries
+
+#  def self.prefetch_hook(records)
+#    # store comment name vars when we find them
+#    name=nil
+#    results = records.each do |record|
+#      if(record[:record_type] == :comment)
+#        # if we are a namevar comment
+#puts "found a comment: #{record.to_yaml}"
+#        if record[:name]
+#puts "found a comment with :name"
+#          name = record[:name]
+#          record[:skip] = true
+#        end
+#       # if we are a spec record, check the namevar
+#      elsif record[:type] == 'spec'
+#        if name
+#puts "adding to a record"
+#          record[:name] = name
+#          name = nil
+#        else
+#          puts "spec record not created by puppet"
+#          # probably a pre-exting record not created by puppet
+#        end 
+#      end
+#    end.reject{|record| record[:skip]}
+#    results
+#  end
 
   # overriding how lines are written to the file
   def self.to_line(hash) 
@@ -170,15 +178,13 @@ puts "adding to a record"
   def self.spec_to_line(hash)
 #puts hash.to_yaml
     #required
-    users=self.array_convert(hash[:users])
+    #users=self.array_convert(hash[:users])
     # required
     hosts=self.array_convert(hash[:hosts])
     # required
     commands=self.array_convert(hash[:commands])
-    puts "adding line:  #{users} #{hosts}=#{commands}"
-    str = "#Puppet namevar #{hash[:name]}\n"
-    str << "#{users} #{hosts}=#{commands}"
-    str
+    puts "adding line:  #{hash[:name]} #{hosts}=#{commands}"
+    "#{hash[:name]} #{hosts}=#{commands}"
   end
 
   # write line for alias records
@@ -194,9 +200,8 @@ puts "adding to a record"
   # write line for default records
   # this is not implemented yet.
   def self.default_to_line(hash)
-    users=hash[:users]
-    # optional?
-    hosts=hash[:hosts]
+    parameters=self.array_convert(hash[:parameters])
+    "#{hash[:name]} #{parameters}"
   end
 
   # convert arrays into to , joined lists

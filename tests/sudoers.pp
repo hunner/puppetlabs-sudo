@@ -16,8 +16,12 @@ sudoers{'blah2':
 sudoers{'blah3':
   #target => '/tmp/sudoers',
   ensure => present,
-  users => ['dan', 'dan2', 'dan3'],
+  #users => ['dan', 'dan2', 'dan3'],
   hosts => ['localhost', 'localhost2'],
-  commands => ['true', 'false'],
+  commands => ['true', 'false', 'dude'],
   type => 'spec',
+}
+sudoers{'Defaults@host':
+  type => 'default',
+  parameters => ['x=y', 'one=1', 'two=2'],
 }

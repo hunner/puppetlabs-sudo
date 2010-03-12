@@ -75,9 +75,10 @@ order matters!!
     end
   end
 
-  newproperty(:users, :array_matching => :all) do
-    desc "list of users for user spec"
-  end
+# single user is namevar
+#  newproperty(:users, :array_matching => :all) do
+#    desc "list of users for user spec"
+#  end
 
   newproperty(:hosts, :array_matching => :all) do
     desc "list of hosts for user spec"
@@ -85,6 +86,10 @@ order matters!!
 
   newproperty(:commands, :array_matching => :all) do
     desc "commands to run"
+  end
+
+  newproperty(:parameters, :array_matching => :all) do
+    desc "default parameters"
   end
 
 end
