@@ -1,0 +1,12 @@
+TESTS:
+
+  alias
+    add line
+    remove line
+    change line
+
+    add 2 lines
+    remove 2 lines
+
+  user spec
+    be sure to test malformed lines
