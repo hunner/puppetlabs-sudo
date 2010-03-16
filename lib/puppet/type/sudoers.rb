@@ -9,6 +9,10 @@ License:: GPL3
 
 The sudoers type supports managing individual lines from the sudoers file.
 
+Supports present/absent.
+
+supports purging.
+
 = Record Types
 
 There are 3 types of records that are supported:
@@ -117,6 +121,11 @@ Defaults@host x=y,one=1,two=2
 # single user is namevar
   newproperty(:users, :array_matching => :all) do
     desc "list of users for user spec"
+    validate do |value|
+      if value =~ /^\s*Defaults/
+        raise Puppet::Error, 'Cannot specify user named Defaults in sudoers'
+      end
+    end
   end
 
   newproperty(:hosts, :array_matching => :all) do

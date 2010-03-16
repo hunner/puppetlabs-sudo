@@ -1,11 +1,11 @@
-This is a type and a provider for managing sudoers file.
+Type/provider for managing sudoers file.
 
-It seems to work pretty well.
+Examples of usage can be found in the tests directory. The type also has rdocs.
 
-lots of examples of usage can be found in the tests directory. The type also has rdocs.
+Sudoers supports ensure => (present|absent)
 
 
-TODO(stuff that I will fix before 0.1 release)
+*TODO(stuff that I hope to fix)
 
   1. A user spec record that starts with Defaults will be parsed as a default. (this may not be resonable to fix)
   2. I can probably set up autorequires on aliases in User Spec line, but this order would only be followed if both records were created.
