@@ -141,16 +141,16 @@ Puppet::Type.type(:sudoers).provide(
 
  # overriding how lines are written to the file
   def self.to_line(hash) 
-    puts "\nEntering self.to_line for #{hash[:name]}"
-    puts "\n#{hash.to_yaml}\n"
+    #puts "\nEntering self.to_line for #{hash[:name]}"
+    #puts "\n#{hash.to_yaml}\n"
 #    # dynamically call a function based on the value of hash[:type]
     if(hash[:record_type] == :blank || hash[:record_type] == :comment)
       hash[:line]
-    elsif(hash[:sudo_alias])
+    elsif(hash[:type] == 'alias')
       self.alias_to_line(hash) 
-    elsif(hash[:commands])
+    elsif(hash[:type] == 'user_spec')
       self.spec_to_line(hash)
-    elsif(hash[:parameters])
+    elsif(hash[:type] == 'default')
       self.default_to_line(hash)
     else
       raise Puppet::Error, "dont understand how to write out record \n|#{hash.to_yaml}\n|"

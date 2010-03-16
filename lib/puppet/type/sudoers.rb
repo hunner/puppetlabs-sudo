@@ -140,6 +140,7 @@ Defaults@host x=y,one=1,two=2
       self[:type] = 'alias'
       checkprops(SUDOERS_DEFAULT, SUDOERS_SPEC)
     elsif self[:parameters]
+      self[:type] = 'default'
       checkprops(SUDOERS_ALIAS, SUDOERS_SPEC)
     elsif self[:users]
       self[:type] = 'user_spec'

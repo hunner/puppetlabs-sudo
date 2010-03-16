@@ -2,14 +2,17 @@ This is a type and a provider for managing sudoers file.
 
 It still has a lot of issues open, but it should be in a consumable state.
 
+lots of examples of usage can be found in the tests directory. The type also has rdocs.
+
 
 TODO(stuff that I will fix before 0.1 release)
 
-  1. A userspec record that starts with Defaults will be parsed as a default. (this may not be possible)
-  2. I still need to verify combinations of properties that work together and throw exceptions for mismatches.
-  3. I can probably set up autorequires on aliases in User Spec line, but this order would only be followed if both records were created.
-  4. If an alias is created with the same name as a previously defined user spec, it does not create it, or throw any errors.
-  5 Should not print out flush or to_line because of performance issue.
+  1. A userspec record that starts with Defaults will be parsed as a default. (this may not be resonable to fix)
+  2. I can probably set up autorequires on aliases in User Spec line, but this order would only be followed if both records were created.
+  3. A namevar cannot switch between types
+     this wound up being too hard to implement.
+       - only uses properties from the parsedrecord
+  4 Can't log flush or to_line events because they occur too often (working on this per issue with parsedfile).
 
 LIMITATIONS (things I will not fix soon):
 
