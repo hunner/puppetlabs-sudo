@@ -74,6 +74,14 @@ Defaults@host x=y,one=1,two=2
   newparam(:name) do
     desc "Either the name of the alias, default, or arbitrary unique string for user specifications"
     isnamevar
+    munge do |value|
+      #puts "params \n#{resource.original_parameters.to_yaml}\n"
+      value
+    end
+  end
+
+  newproperty(:type) do
+    desc "optional parameter used to determine what the record type is"
   end
 
   newproperty(:sudo_alias) do
@@ -123,5 +131,37 @@ Defaults@host x=y,one=1,two=2
     desc "default parameters"
   end
 
+  # make sure that we only have attributes for either default, alias, or user_spec
+  SUDOERS_DEFAULT = [:parameters]
+  SUDOERS_ALIAS = [:sudo_alias, :items]
+  SUDOERS_SPEC = [:users, :hosts, :commands]
+  validate do
+    if self[:sudo_alias] 
+      self[:type] = 'alias'
+      checkprops(SUDOERS_DEFAULT, SUDOERS_SPEC)
+    elsif self[:parameters]
+      checkprops(SUDOERS_ALIAS, SUDOERS_SPEC)
+    elsif self[:users]
+      self[:type] = 'user_spec'
+      checkprops(SUDOERS_ALIAS, SUDOERS_DEFAULT)
+    else
+      # these are parsed records, do nothing 
+    end
+    #puts self.should('sudo_alias')
+    #puts self.to_yaml  
+    #puts self.eachproperty do |x| puts x end
+  end
+
+  private
+
+  # check that we dont have any conflicting attributes
+  def checkprops(array_one, array_two)
+    combined = Array.new.concat(array_one).concat(array_two)
+    combined.each do |item|
+      if self[item.to_sym]
+        raise Puppet::Error, "Unexpected attribute #{item} for sudo record type #{self[:type]}"
+      end
+    end 
+  end
 end
  

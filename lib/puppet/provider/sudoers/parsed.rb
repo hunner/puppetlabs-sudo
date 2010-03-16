@@ -9,7 +9,6 @@ Puppet::Type.type(:sudoers).provide(
   :parsed, 
   :parent => Puppet::Provider::ParsedFile, 
   :default_target => '/etc/sudoers', 
-  # what the heck does this mean?
   :filetype => :flat
 ) do
  
@@ -102,6 +101,11 @@ Puppet::Type.type(:sudoers).provide(
     hash[:parameters] = parameters.gsub(/\s/, '').split(',')
   end
   
+  # can I override this?
+  def type=(value)
+    raise Puppet::Error, 'not supporting switching NAMEVAR between record types'
+  end
+  
   # I could use prefetch_hook to support multi-line entries
   # will use the prefetch_hook to determine if
   # the line before us is a commented namevar line
@@ -137,8 +141,8 @@ Puppet::Type.type(:sudoers).provide(
 
  # overriding how lines are written to the file
   def self.to_line(hash) 
-#    puts "\nEntering self.to_line for #{hash[:name]}"
-    #puts "\n#{hash.to_yaml}\n"
+    puts "\nEntering self.to_line for #{hash[:name]}"
+    puts "\n#{hash.to_yaml}\n"
 #    # dynamically call a function based on the value of hash[:type]
     if(hash[:record_type] == :blank || hash[:record_type] == :comment)
       hash[:line]
@@ -209,9 +213,9 @@ Puppet::Type.type(:sudoers).provide(
   # flush seems to be called more than one time?
   def self.flush_target(target)
     Puppet.info("We are flushing #{target}")
-  #  a little pre-flush hot visudo action
-#puts File.read(target)
-  visudo("-cf", target) unless (File.zero?(target) or !File.exists?(target))
+    #  a little pre-flush hot visudo action
+    #puts File.read(target)
+    visudo("-cf", target) unless (File.zero?(target) or !File.exists?(target))
     super(target)
   end
 end
