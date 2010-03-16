@@ -3,3 +3,25 @@ This is a type and a provider for managing sudoers file.
 It doesnt work yet, but it will. still trying to learn how parsedfile works and how much I can push its boundaries.
 
 It will update this README when its ready for consumption.
+
+
+KNOWN ISSUES/TODO
+
+  1. No support for parsing multi-line files (with \). I may add this in the next revision.
+  2. Forced to use comments to specify NAMEVARS. This means that there is no
+  way to determine if an added line is the same as an existing line.
+  3. Dependencies are only aplied between records at creation time. It is not possible to insert a new record before an existing one. There is probably a good way to fix this, but I need more time to look into it.
+  4. A userspec record that starts with Defaults will be parsed as a default. (this may not be possible)
+  5. I still need to verify combinations of properties that work together and throw exceptions for mismatches.
+  6. I can probably set up autorequires on aliases in User Spec line, but this order would only be followed if both records were created.
+
+  7. Performance - seems to be runing to_line way too many times, also flushing way too often
+  
+COMMENT NAMEVARS:
+
+I have chosen (or been forced to) implement NAMEVARS using comments. This adds a ton of complexity to the code and its usage. This also means that identical lines will be allowed provided that they have the same namevar. 
+
+I have to do this dirty pre-line stuff for user_spec.
+  I had considered requiring uniqueness for the user-spec
+    this does when considering that an alias can also be a user spec user, this violates uniqueness.
+

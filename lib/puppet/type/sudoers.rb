@@ -38,24 +38,21 @@ order matters!!
   ensurable
 
   newparam(:name) do
-    desc "Either the name of the alias to create 
-          or for user specification, a random string in a comment that serves as a place holder (kind of ugly, but its true)
-    "
-                              
+    desc "Either the name of the alias default or users in user spec"
     isnamevar
   end
 
-#
-# this has to be a property to be found by parsedfile, but 
-# its really a parameter
-
-  newproperty(:type) do
-    desc "Either determines which type of sudo configuration line is
-          is being managed. Either user_spec or alias"
-  end
-
   newproperty(:sudo_alias) do
-    desc "Types of alias."
+    desc "Type of alias. Options are Cmnd, Host, User, and Runas"
+    newvalue(/^(Cmnd|Host|User|Runas)(_Alias)?$/)
+    # add _Alias if it was ommitted
+    munge do |value|
+      if(value =~ /^(Cmnd|Host|User|Runas)$/) 
+        value << '_Alias'
+      end
+      value
+    end
+    # this is now an alias type
   end
 
   newproperty(:items, :array_matching => :all) do
@@ -76,9 +73,9 @@ order matters!!
   end
 
 # single user is namevar
-#  newproperty(:users, :array_matching => :all) do
-#    desc "list of users for user spec"
-#  end
+  newproperty(:users, :array_matching => :all) do
+    desc "list of users for user spec"
+  end
 
   newproperty(:hosts, :array_matching => :all) do
     desc "list of hosts for user spec"

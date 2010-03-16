@@ -18,54 +18,36 @@ Puppet::Type.type(:sudoers).provide(
   commands :visudo => 'visudo'
 
   # this is just copied from hosts
-  text_line :comment, :match => %r{^#}
-
-#, :post_parse => proc { |record|
-#    # we determine the name from the comment above user spec lines
-#    if record[:line] =~ /Puppet namevar (.+)\s*$/
-#      record[:name] = $1
-#    end
-#  } 
+  text_line :comment, :match => %r{^#}, 
+    :post_parse => proc { |record|
+    # shameful NAMEVAR hack :(
+      if record[:line] =~ /Puppet NAMEVAR (.+)\s*$/
+        record[:name] = $1
+      end
+    } 
 
   text_line :blank, :match => /^\s*$/;
 
-  # ignore for now, I will support this line later
-#  text_line :defaults, :match => /^Defaults/
-
-# I need to parse the , delim list into an array
-# I am pretty sure that I would do this with a block statement
-
-#
-# it seems like I have to put type here for it to be accessible to 
-# to_line
-#
-
-
-# not bothering to specify match or fields, I will determine all of this
-# in post_parse
-
-  # parse everyline not captured as blank or a comment
-
- # record_line :parsed, :fields => %w{sudo_alias name items}, 
- # :match => /^\s*(User_Alias|Runas_Alias|Host_Alias|Cmnd_Alias)\s+(\S+)\s*=\s*(.+)$/,
+  #
+  # parse lines as either a Defaults, Alias, or User spec.
+  #
+  # match everything and process entire line
   record_line :parsed, :fields => %w{line},
     :match => /(.*)/,
-#    # process these lines manually
     :post_parse => proc { |hash|
-      puts "\npost_parse"
-#      puts hash[:line]
-#      # create records for aliases
-      if (hash[:line] =~ /^\s*(User_Alias|Runas_Alias|Host_Alias|Cmnd_Alias)\s+(\S+)\s*=\s*(.+)$/)
-        Puppet::Type.type(:sudoers).provider(:parsed).parse_alias($1, $2, $3, hash)
-#      # create records for user specs
-       # we only allow one user to be specified.
-      elsif (hash[:line] =~ /^\s*(\S+)(.*)?=(.*)$/)
-        Puppet::Type.type(:sudoers).provider(:parsed).parse_user_spec($1, $2, $3, hash)
-#      # this is just a place holder, I have not implemted Defaults yet
+      Puppet.debug("sudoers post_parse for line #{hash[:line]}")
+      # create records for aliases
+      if (hash[:line] =~ /^\s*((User|Runas|Host|Cmnd)_Alias)\s+(\S+)\s*=\s*(.+)$/)
+        Puppet.debug("parsed line as Alias")
+        Puppet::Type.type(:sudoers).provider(:parsed).parse_alias($1, $3, $4, hash)
       elsif (hash[:line] =~ /^\s*(Defaults\S*)\s*(.*)$/)
+        Puppet.debug("parsed line as Defaults")
         Puppet::Type.type(:sudoers).provider(:parsed).parse_defaults($1, $2, hash)
+      elsif (hash[:line] =~ /^\s*(.*)?=(.*)$/)
+        Puppet.debug("parsed line as User Spec")
+        Puppet::Type.type(:sudoers).provider(:parsed).parse_user_spec($1, $2, hash)
       else 
-        raise Exception, "invalid line #{hash[:line]}"
+        raise Puppet::Error, "invalid line #{hash[:line]}"
       end
 #      puts hash.to_yaml
 #      hash
@@ -76,101 +58,98 @@ Puppet::Type.type(:sudoers).provide(
     hash[:type] = 'alias'
     hash[:sudo_alias] = sudo_alias
     hash[:name] = name
-    hash[:items] = items.gsub(/\s/, '').split(',')
+    hash[:items] = clean_list(items) 
     hash 
   end
 
   # parse existing user spec lines from sudoers
-  def self.parse_user_spec(user, hosts, commands, hash) 
-    hash[:type] = 'spec'
-    hash[:name] = user
-    hash[:hosts] = hosts.gsub(/\s/, '').split(',')
-    hash[:commands] = commands.gsub(/\s/, '').split(',')
-    hash
-#    lhs_array = lhs.split(',')  
-#    # every element will be a user until the hit the delim
-#    currentsymbol = :users
-#    hash[:users] = Array.new
-#    hash[:hosts] = Array.new
-#    # parsing users and hosts is kind of complicated, sorry
-#    lhs_array.each do |element|
-##puts "!! #{element}"
-#    # the element that splits users and hosts will be 2 white space delimited strings 
-#      if element =~ /^\s*(\S+)\s+(\S+)\s*$/
-#        user, host  = $1, $2
-#        raise Exception, 'found more than one whitespace delim when parsing left hand side of user spec' if currentsymbol==:hosts
-#        # sweet we found the delim between user and host
-#        hash[currentsymbol] << user.gsub(/\s/, '')
-#        # now everything else will be a host
-#        currentsymbol=:hosts
-#        hash[currentsymbol] << host.gsub(/\s/, '')
-#      elsif element =~ /\s*\S+\s*/
-#        hash[currentsymbol] << element.gsub(/\s/, '')
-#      else
-#        raise Exception, "Malformed user spec line lhs: #{lhs}"
-#      end
-#    end
+  def self.parse_user_spec(users_hosts, commands, hash) 
+    hash[:type] = 'user_spec'
+    #hash[:name] = user
+    #hash[:hosts] = hosts.gsub(/\s/, '').split(',')
+    hash[:commands] = clean_list(commands)
+    hash_array = users_hosts.split(',')  
+    # every element will be a user until the hit the delim
+    currentsymbol = :users
+    hash[:users] = Array.new
+    hash[:hosts] = Array.new
+    # parsing users and hosts is kind of complicated, sorry
+    hash_array.each do |element|
+#puts "!! #{element}"
+    # the element that splits users and hosts will be 2 white space delimited strings 
+      if element =~ /^\s*(\S+)\s+(\S+)\s*$/
+        user, host  = $1, $2
+        if currentsymbol == :hosts
+          raise Exception, 'found more than one whitespace delim in users_hosts' 
+        end
+        # sweet we found the delim between user and host
+        hash[currentsymbol] << user.gsub(/\s/, '')
+        # now everything else will be a host
+        currentsymbol=:hosts
+        hash[currentsymbol] << host.gsub(/\s/, '')
+      elsif element =~ /\s*\S+\s*/
+        hash[currentsymbol] << element.gsub(/\s/, '')
+      else
+        raise Exception, "Malformed user spec line lhs: #{lhs}"
+      end
+    end
   end 
 
+  # create record for defaults line
   def self.parse_defaults(default, parameters, hash)
     hash[:name] = default
+    hash[:type] = 'default'
     hash[:parameters] = parameters.gsub(/\s/, '').split(',')
   end
   
+  # I could use prefetch_hook to support multi-line entries
   # will use the prefetch_hook to determine if
   # the line before us is a commented namevar line
   # only used for user spec.
-  # lot of this code is shameless taken from provider crontab.rb
-  #
-
-# I could use prefetch_hook to support multoi-line entries
-
-#  def self.prefetch_hook(records)
-#    # store comment name vars when we find them
-#    name=nil
-#    results = records.each do |record|
-#      if(record[:record_type] == :comment)
-#        # if we are a namevar comment
+  # Most of this code is shameless taken from provider crontab.rb
+  # NAMEVAR comments leave me in need of a shower, but it seems to be the only way.
+  def self.prefetch_hook(records)
+    # store comment name vars when we find them
+    name=nil
+    results = records.each do |record|
+      if(record[:record_type] == :comment)
+        # if we are a namevar comment
 #puts "found a comment: #{record.to_yaml}"
-#        if record[:name]
+        if record[:name]
 #puts "found a comment with :name"
-#          name = record[:name]
-#          record[:skip] = true
-#        end
-#       # if we are a spec record, check the namevar
-#      elsif record[:type] == 'spec'
-#        if name
+          name = record[:name]
+          record[:skip] = true
+        end
+       # if we are a spec record, check the namevar
+      elsif record[:type] == 'user_spec'
+        if name
 #puts "adding to a record"
-#          record[:name] = name
-#          name = nil
-#        else
-#          puts "spec record not created by puppet"
-#          # probably a pre-exting record not created by puppet
-#        end 
-#      end
-#    end.reject{|record| record[:skip]}
-#    results
-#  end
+          record[:name] = name
+          name = nil
+        else
+          puts "spec record not created by puppet"
+          # probably a pre-exting record not created by puppet
+        end 
+      end
+    end.reject{|record| record[:skip]}
+    results
+  end
 
-  # overriding how lines are written to the file
+ # overriding how lines are written to the file
   def self.to_line(hash) 
 #    puts "\nEntering self.to_line for #{hash[:name]}"
     #puts "\n#{hash.to_yaml}\n"
 #    # dynamically call a function based on the value of hash[:type]
     if(hash[:record_type] == :blank || hash[:record_type] == :comment)
-#puts "!!!!!!!!#{hash[:line]}"
       hash[:line]
-    elsif(hash[:type] == 'alias')
+    elsif(hash[:sudo_alias])
       self.alias_to_line(hash) 
-    elsif(hash[:type] == 'spec')
+    elsif(hash[:commands])
       self.spec_to_line(hash)
-    elsif(hash[:type] == 'default')
+    elsif(hash[:parameters])
       self.default_to_line(hash)
-#    # parsed records that did not match a declared resource
-#    elsif(hash[:line])
-#      hash[:line] 
     else
-      raise Exception, "dont understand how to write out record #{hash.to_yaml}"
+      raise Puppet::Error, "dont understand how to write out record \n|#{hash.to_yaml}\n|"
     end
   end
 
@@ -181,10 +160,13 @@ Puppet::Type.type(:sudoers).provide(
     #users=self.array_convert(hash[:users])
     # required
     hosts=self.array_convert(hash[:hosts])
+    users=self.array_convert(hash[:users])
     # required
     commands=self.array_convert(hash[:commands])
-    puts "adding line:  #{hash[:name]} #{hosts}=#{commands}"
-    "#{hash[:name]} #{hosts}=#{commands}"
+    str = "#Puppet NAMEVAR #{hash[:name]}"
+    str << "\n#{users} #{hosts}=#{commands}"
+    Puppet.notice "adding line:  #{str}"
+    str
   end
 
   # write line for alias records
@@ -193,15 +175,18 @@ Puppet::Type.type(:sudoers).provide(
     # shouldnt the type do that? check file, its similar
     # since different attributes make sense based on ensure value (dir/file/symlink)
     items=self.array_convert(hash[:items])
-    #puts "adding line: #{hash[:sudo_alias]} #{hash[:name]}=#{items}"
-    "#{hash[:sudo_alias]} #{hash[:name]}=#{items}"
+    str = "#{hash[:sudo_alias]} #{hash[:name]}=#{items}"
+    Puppet.notice "adding line: #{str}"
+    str
   end
 
   # write line for default records
   # this is not implemented yet.
   def self.default_to_line(hash)
     parameters=self.array_convert(hash[:parameters])
-    "#{hash[:name]} #{parameters}"
+    str = "#{hash[:name]} #{parameters}"
+    Puppet.notice "Adding line #{str}"
+    str
   end
 
   # convert arrays into to , joined lists
@@ -213,9 +198,20 @@ Puppet::Type.type(:sudoers).provide(
     end
   end
 
+  # split a list on delim,  trim leading and trailing white-spaces
+  def self.clean_list(list, delim=',')
+    list.split(delim).collect do |x| 
+      x.gsub(/\s*(.*)?\s*/, '\1')
+    end
+  end
+
   # used to verify files with visudo before they are flushed 
-  def self.flush(record)
+  # flush seems to be called more than one time?
+  def self.flush_target(target)
+    Puppet.info("We are flushing #{target}")
   #  a little pre-flush hot visudo action
-    super(record)
+#puts File.read(target)
+  visudo("-cf", target) unless (File.zero?(target) or !File.exists?(target))
+    super(target)
   end
 end
