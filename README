@@ -1,33 +1,21 @@
 This is a type and a provider for managing sudoers file.
 
-It still has a lot of issues open, but it should be in a consumable state.
+It seems to work pretty well.
 
 lots of examples of usage can be found in the tests directory. The type also has rdocs.
 
 
 TODO(stuff that I will fix before 0.1 release)
 
-  1. A userspec record that starts with Defaults will be parsed as a default. (this may not be resonable to fix)
+  1. A user spec record that starts with Defaults will be parsed as a default. (this may not be resonable to fix)
   2. I can probably set up autorequires on aliases in User Spec line, but this order would only be followed if both records were created.
-  3. A namevar cannot switch between types
-     this wound up being too hard to implement.
-       - only uses properties from the parsedrecord
+  3. A record (as determined by NAMEVAR) cannot switch between types. Currently throws an exception.
   4 Can't log flush or to_line events because they occur too often (working on this per issue with parsedfile).
 
 LIMITATIONS (things I will not fix soon):
 
   1. No support for parsing multi-line files (with \). I may add this in the next revision.
-  2. Forced to use comments to specify NAMEVARS. This means that there is no
+  2. Forced to use comments to specify NAMEVAR for user specs. This means that there is no
   way to determine if an added line is the same as an existing line.
-  3. Dependencies are only aplied between records at creation time. It is not possible to insert a new record before an existing one. There is probably a good way to fix this, but I need more time to look into it. Currently discussing with dev, this will require a feature request in parsedfile??
+  3. Dependencies are only aplied between records at creation time. It is not possible to insert a new record before an existing one. There is probably a good way to fix this, but I need more time to look into it. Currently discussing with dev, this may require a feature request in parsedfile??
   4. Performance issue with parsedfile- seems to be runing to_line way too many times, also flushing way too often
-
-  
-COMMENT NAMEVARS:
-
-I have chosen (or been forced to) implement NAMEVARS using comments. This adds a ton of complexity to the code and its usage. This also means that identical lines will be allowed provided that they have the same namevar. 
-
-I have to do this dirty pre-line stuff for user_spec.
-  I had considered requiring uniqueness for the user-spec
-    this does when considering that an alias can also be a user spec user, this violates uniqueness.
-
