@@ -11,7 +11,7 @@ sudoers{'BLAH1':
 sudoers{'blah4':
   #target => '/tmp/sudoers',
   ensure => present,
-  users => ['dan', 'dan4', 'dan3'],
+ users => ['dan', 'dan4', 'dan3'],
   hosts => ['localhost', 'localhost2'],
   commands => ['/bin/true blah', '/bin/false de', '/bin/duder/dude blah'],
   require => Sudoers['Defaults@host'],
