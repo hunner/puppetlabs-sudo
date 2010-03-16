@@ -1,21 +1,24 @@
 This is a type and a provider for managing sudoers file.
 
-It doesnt work yet, but it will. still trying to learn how parsedfile works and how much I can push its boundaries.
-
-It will update this README when its ready for consumption.
+It still has a lot of issues open, but it should be in a consumable state.
 
 
-KNOWN ISSUES/TODO
+TODO(stuff that I will fix before 0.1 release)
+
+  1. A userspec record that starts with Defaults will be parsed as a default. (this may not be possible)
+  2. I still need to verify combinations of properties that work together and throw exceptions for mismatches.
+  3. I can probably set up autorequires on aliases in User Spec line, but this order would only be followed if both records were created.
+  4. If an alias is created with the same name as a previously defined user spec, it does not create it, or throw any errors.
+  5 Should not print out flush or to_line because of performance issue.
+
+LIMITATIONS (things I will not fix soon):
 
   1. No support for parsing multi-line files (with \). I may add this in the next revision.
   2. Forced to use comments to specify NAMEVARS. This means that there is no
   way to determine if an added line is the same as an existing line.
-  3. Dependencies are only aplied between records at creation time. It is not possible to insert a new record before an existing one. There is probably a good way to fix this, but I need more time to look into it.
-  4. A userspec record that starts with Defaults will be parsed as a default. (this may not be possible)
-  5. I still need to verify combinations of properties that work together and throw exceptions for mismatches.
-  6. I can probably set up autorequires on aliases in User Spec line, but this order would only be followed if both records were created.
-  7. Performance - seems to be runing to_line way too many times, also flushing way too often
-  8. If an alias is created with the same name as a previously defined user spec, it does not create it, or throw any errors.
+  3. Dependencies are only aplied between records at creation time. It is not possible to insert a new record before an existing one. There is probably a good way to fix this, but I need more time to look into it. Currently discussing with dev, this will require a feature request in parsedfile??
+  4. Performance issue with parsedfile- seems to be runing to_line way too many times, also flushing way too often
+
   
 COMMENT NAMEVARS:
 
