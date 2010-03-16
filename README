@@ -14,8 +14,8 @@ KNOWN ISSUES/TODO
   4. A userspec record that starts with Defaults will be parsed as a default. (this may not be possible)
   5. I still need to verify combinations of properties that work together and throw exceptions for mismatches.
   6. I can probably set up autorequires on aliases in User Spec line, but this order would only be followed if both records were created.
-
   7. Performance - seems to be runing to_line way too many times, also flushing way too often
+  8. If an alias is created with the same name as a previously defined user spec, it does not create it, or throw any errors.
   
 COMMENT NAMEVARS:
 

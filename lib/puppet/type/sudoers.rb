@@ -1,44 +1,78 @@
 Puppet::Type.newtype(:sudoers) do
   @doc = "Manage the contents of /etc/sudoers
 
-there are two types of things here:
+Author:: Dan Bode (dan@reductivelabs.com)
+Copyright:: BLAH!!
+License:: GPL3
 
-  sudoer{'NAME':
-    ensure => (absent|present)
-    type => (alias|spec) # required??
-    alias => (User_alias|Runas_alias|Host_alias|Cmnd_alias),
-    items => [] # this is only for aliases
-    user_list => []
-    host_list => []
-    operator_list => []
-    # NOPASSWD, PASSWD, NOEXEC, EXEC, SETENV and NOSETENV
-    tag_list => []
-    command_list => []
-  }
+= Summary
 
-  alias NAME - starts with CAP ([A-Z]([A-Z][0-9]_)*)
+The sudoers type supports managing individual lines from the sudoers file.
 
-aliases, user specifications
-   User_alias
-   Runas_alias
-   Host_alias
-   Cmnd_alias
+= Record Types
 
-alias spec:
+There are 3 types of records that are supported:
 
- Alias_Type NAME = item1, item2, item3 : NAME = item4, item5
+== Aliases:
+ 
+Manages an alias line of a sudoers file.
 
+Example:
+ 
+sudoers{'ALIAS_NAME':
+  ensure => present,
+  sudo_alias => 'Cmnd',
+  items => ['/bin/true', '/usr/bin/su - bob'],
+}
 
-order matters!!
+creates the following line:
 
+Cmnd_Alias ALIAS_NAME=/bin/true,/usr/bin/su - bob
+
+== User Specification
+
+sudoers line that specifies how users can run commands.
+
+This there is no way to clearly determine uniqueness, a comment line is added above user spec lines that contains the namevar.
+
+Example:
+
+sudoers{'NAME':
+  ensure => present,
+  users => ['dan1', 'dan2'],
+  hosts => 'ALL',
+  commands => [
+    '(root) /usr/bin/su - easapp',
+    '(easapp)/usr/local/eas-ts/bin/appctl',
+  ],
+}
+
+creates the following line:  
+
+#Puppet NAMEVAR NAME
+dan1,dan2 ALL=(root) /usr/bin/su - easapp,(easapp)/usr/local/eas-ts/bin/appctl
+
+Defaults:
+
+the default name is used to determine uniqueness.
+
+sudoers{'Defaults@host':
+  parameters => ['x=y', 'one=1', 'two=2'],
+}
+
+Defaults@host x=y,one=1,two=2
+
+== Notes:
+
+- parsing of multi-line sudoers records is not currently supported.
+- ordering only applies when records are created.
 
             "
-  # we can either remove or add lines
-  # they should also be purgable?(whats the namesvar for specs?)
+  # support absent and present (also purge -> true)
   ensurable
 
   newparam(:name) do
-    desc "Either the name of the alias default or users in user spec"
+    desc "Either the name of the alias, default, or arbitrary unique string for user specifications"
     isnamevar
   end
 
