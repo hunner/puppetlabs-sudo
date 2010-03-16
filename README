@@ -7,10 +7,9 @@ Sudoers supports ensure => (present|absent)
 
 *TODO(stuff that I hope to fix)
 
-  1. A user spec record that starts with Defaults will be parsed as a default. (this may not be resonable to fix)
-  2. I can probably set up autorequires on aliases in User Spec line, but this order would only be followed if both records were created.
-  3. A record (as determined by NAMEVAR) cannot switch between types. Currently throws an exception.
-  4 Can't log flush or to_line events because they occur too often (working on this per issue with parsedfile).
+  1. I can probably set up autorequires on aliases in User Spec line, but this order would only be followed if both records were created.
+  2. A record (as determined by NAMEVAR) cannot switch between types. Currently throws an exception.
+  3 Can't log flush or to_line events because they occur too often (working on this per issue with parsedfile).
 
 LIMITATIONS (things I will not fix soon):
 
