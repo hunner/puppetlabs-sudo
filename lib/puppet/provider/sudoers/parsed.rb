@@ -36,15 +36,16 @@ Puppet::Type.type(:sudoers).provide(
     :post_parse => proc { |hash|
       Puppet.debug("sudoers post_parse for line #{hash[:line]}")
       # create records for aliases
+      parsed = Puppet::Type.type(:sudoers).provider(:parsed)
       if (hash[:line] =~ /^\s*((User|Runas|Host|Cmnd)_Alias)\s+(\S+)\s*=\s*(.+)$/)
         Puppet.debug("parsed line as Alias")
-        Puppet::Type.type(:sudoers).provider(:parsed).parse_alias($1, $3, $4, hash)
+        parsed.parse_alias($1, $3, $4, hash)
       elsif (hash[:line] =~ /^\s*(Defaults\S*)\s*(.*)$/)
         Puppet.debug("parsed line as Defaults")
-        Puppet::Type.type(:sudoers).provider(:parsed).parse_defaults($1, $2, hash)
+        parsed.parse_defaults($1, $2, hash)
       elsif (hash[:line] =~ /^\s*(.*)?=(.*)$/)
         Puppet.debug("parsed line as User Spec")
-        Puppet::Type.type(:sudoers).provider(:parsed).parse_user_spec($1, $2, hash)
+        parsed.parse_user_spec($1, $2, hash)
       else 
         raise Puppet::Error, "invalid line #{hash[:line]}"
       end
@@ -131,7 +132,7 @@ Puppet::Type.type(:sudoers).provide(
           record[:name] = name
           name = nil
         else
-          puts "spec record not created by puppet"
+          Puppet.info "spec record not created by puppet"
           # probably a pre-exting record not created by puppet
         end 
       end
