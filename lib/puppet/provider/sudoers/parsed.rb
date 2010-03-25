@@ -23,7 +23,7 @@ Puppet::Type.type(:sudoers).provide(
       if record[:line] =~ /Puppet NAMEVAR (.+)\s*$/
         record[:name] = $1
       end
-    } 
+    }
 
   text_line :blank, :match => /^\s*$/;
 
@@ -148,14 +148,16 @@ Puppet::Type.type(:sudoers).provide(
     if(hash[:record_type] == :blank || hash[:record_type] == :comment)
       hash[:line]
     elsif(hash[:type] == 'alias')
-      self.alias_to_line(hash) 
+      line = self.alias_to_line(hash) 
     elsif(hash[:type] == 'user_spec')
-      self.spec_to_line(hash)
+      line = self.spec_to_line(hash)
     elsif(hash[:type] == 'default')
-      self.default_to_line(hash)
+      line = self.default_to_line(hash)
     else
       raise Puppet::Error, "dont understand how to write out record \n|#{hash.to_yaml}\n|"
     end
+    self.verify_sudo_line(line)
+    line
   end
 
   # write line for user spec records
@@ -194,6 +196,29 @@ Puppet::Type.type(:sudoers).provide(
     str
   end
 
+  #
+  #  this method verifies if a line is valid before its written.
+  #  this assumes that we can use visudoers on individual lines
+  #
+  def self.verify_sudo_line(line)
+    # path is currently hardcoded, needs to be fixed
+    base = '/etc/sudoers' 
+    # find a tmp file that does not exist
+    # this should be built into Ruby?
+    path = "#{base}.puppettmp_#{rand(10000)}"
+    while File.exists?(path) or File.symlink?(path)
+      path = "#{base}.puppettmp_#{rand(10000)}"
+    end
+    File.open(path, "w") { |f| f.print "#{line}\n" }
+    begin
+      visudo("-cf", path)
+    rescue => detail
+      raise Puppet::Error, "visudo failed for line: #{line}, #{detail}"
+    ensure 
+      File.unlink(path) if FileTest.exists?(path)
+    end
+  end
+
   # convert arrays into to , joined lists
   def self.array_convert(list)
     if list.class == Array
@@ -210,13 +235,4 @@ Puppet::Type.type(:sudoers).provide(
     end
   end
 
-  # used to verify files with visudo before they are flushed 
-  # flush seems to be called more than one time?
-  def self.flush_target(target)
-    Puppet.info("We are flushing #{target}")
-    #  a little pre-flush hot visudo action
-    #puts File.read(target)
-    visudo("-cf", target) unless (File.zero?(target) or !File.exists?(target))
-    super(target)
-  end
 end
