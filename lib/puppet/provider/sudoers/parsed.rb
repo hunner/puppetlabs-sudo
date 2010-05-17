@@ -22,6 +22,8 @@ Puppet::Type.type(:sudoers).provide(
     # shameful NAMEVAR hack :(
       if record[:line] =~ /Puppet NAMEVAR (.+)\s*$/
         record[:name] = $1
+      elsif record[:line] =~ /#(.*)/
+        record[:comment] = $1
       end
     }
 
@@ -115,7 +117,7 @@ Puppet::Type.type(:sudoers).provide(
   # NAMEVAR comments leave me in need of a shower, but it seems to be the only way.
   def self.prefetch_hook(records)
     # store comment name vars when we find them
-    name=nil
+    name,comment=nil
     results = records.each do |record|
       if(record[:record_type] == :comment)
         # if we are a namevar comment
@@ -124,17 +126,24 @@ Puppet::Type.type(:sudoers).provide(
 #puts "found a comment with :name"
           name = record[:name]
           record[:skip] = true
+        elsif record[:comment] != nil
+          comment = record[:comment]
+          record[:skip] = true
         end
+      elsif(record[:record_type] == :parsed)
+        record[:comment] = comment
+        comment = nil 
        # if we are a spec record, check the namevar
-      elsif record[:type] == 'user_spec'
-        if name
-#puts "adding to a record"
-          record[:name] = name
-          name = nil
-        else
-          Puppet.info "spec record not created by puppet"
-          # probably a pre-exting record not created by puppet
-        end 
+        if record[:type] == 'user_spec'
+          if name
+            #puts "adding to a record"
+            record[:name] = name
+            name = nil
+          else
+            Puppet.info "spec record not created by puppet"
+            # probably a pre-exting record not created by puppet
+          end 
+        end
       end
     end.reject{|record| record[:skip]}
     results
@@ -157,6 +166,9 @@ Puppet::Type.type(:sudoers).provide(
       raise Puppet::Error, "dont understand how to write out record \n|#{hash.to_yaml}\n|"
     end
     self.verify_sudo_line(line)
+    if hash[:comment]
+      line = "##{hash[:comment]}\n#{line}"
+    end
     line
   end
 
