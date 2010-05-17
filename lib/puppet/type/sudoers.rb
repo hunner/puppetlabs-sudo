@@ -84,8 +84,19 @@ Defaults@host x=y,one=1,two=2
     end
   end
 
-  newproperty(:type) do
+
+  #
+  # I changed this to be required. this will allow me to 
+  # do more param checking based on type.
+  #
+  newparam(:type) do
     desc "optional parameter used to determine what the record type is"
+    isrequired
+    validate do |type|
+      unless type =~ /(default|alias|user_spec)/
+        raise Puppet::Exception, "unexpected sudoers type #{type}" 
+      end
+    end
   end
 
   newproperty(:sudo_alias) do
@@ -107,7 +118,6 @@ Defaults@host x=y,one=1,two=2
 
   newproperty(:target) do
     desc "Location of the shells file"
-
     defaultto do
       if
         @resource.class.defaultprovider.ancestors.include?(Puppet::Provider::ParsedFile)
@@ -140,38 +150,69 @@ Defaults@host x=y,one=1,two=2
     desc "default parameters"
   end
 
+  # I should check that this is not /PUPPET NAMEVAR/ 
+  newproperty(:comment) do
+    defaultto ''
+  end
+
+
+
   # make sure that we only have attributes for either default, alias, or user_spec
+  # I need to think about this... This prevents users from being able 
+  # to set resource defaults...
+  #
   SUDOERS_DEFAULT = [:parameters]
   SUDOERS_ALIAS = [:sudo_alias, :items]
   SUDOERS_SPEC = [:users, :hosts, :commands]
   validate do
-    if self[:sudo_alias] 
-      self[:type] = 'alias'
-      checkprops(SUDOERS_DEFAULT, SUDOERS_SPEC)
-    elsif self[:parameters]
-      self[:type] = 'default'
-      checkprops(SUDOERS_ALIAS, SUDOERS_SPEC)
-    elsif self[:users]
-      self[:type] = 'user_spec'
-      checkprops(SUDOERS_ALIAS, SUDOERS_DEFAULT)
+    if self[:type] == 'default'
+      checkprops(SUDOERS_DEFAULT)      
+    elsif self[:type] == 'alias'
+      checkprops(SUDOERS_ALIAS)      
+    elsif self[:type] == 'user_spec'
+      checkprops(SUDOERS_SPEC)      
     else
-      # these are parsed records, do nothing 
+      # this should not be possible
+      raise "Unknown type #{self[:type]}"
     end
-    #puts self.should('sudo_alias')
-    #puts self.to_yaml  
-    #puts self.eachproperty do |x| puts x end
   end
 
   private
 
-  # check that we dont have any conflicting attributes
-  def checkprops(array_one, array_two)
-    combined = Array.new.concat(array_one).concat(array_two)
-    combined.each do |item|
-      if self[item.to_sym]
-        raise Puppet::Error, "Unexpected attribute #{item} for sudo record type #{self[:type]}"
+    def checkprops(props)
+      props.each do |prop|
+        unless self[prop.to_symbol]
+          raise Puppet::Exception, "missing attribute #{prop} for type #{type}"
+        end
       end
-    end 
-  end
+    end
+#    if self[:sudo_alias] 
+#      self[:type] = 'alias'
+#      checkprops(SUDOERS_DEFAULT, SUDOERS_SPEC)
+#    elsif self[:parameters]
+#      self[:type] = 'default'
+#      checkprops(SUDOERS_ALIAS, SUDOERS_SPEC)
+#    elsif self[:users]
+#      self[:type] = 'user_spec'
+#      checkprops(SUDOERS_ALIAS, SUDOERS_DEFAULT)
+#    else
+#      # these are parsed records, do nothing 
+#    end
+    #puts self.should('sudo_alias')
+    #puts self.to_yaml  
+    #puts self.eachproperty do |x| puts x end
+#  end
+
+#  private
+
+  # check that we dont have any conflicting attributes
+#  def checkprops(array_one, array_two)
+#    combined = Array.new.concat(array_one).concat(array_two)
+#    combined.each do |item|
+#      if self[item.to_sym]
+#        raise Puppet::Error, "Unexpected attribute #{item} for sudo record type #{self[:type]}"
+#      end
+#    end 
+#  end
 end
  
