@@ -82,7 +82,7 @@ Puppet::Type.type(:sudoers).provide(
       if element =~ /^\s*(\S+)\s+(\S+)\s*$/
         user, host  = $1, $2
         if currentsymbol == :hosts
-          raise Exception, 'found more than one whitespace delim in users_hosts' 
+          raise Puppet::Error, 'found more than one whitespace delim in users_hosts' 
         end
         # sweet we found the delim between user and host
         hash[currentsymbol] << user.gsub(/\s/, '')
@@ -92,7 +92,7 @@ Puppet::Type.type(:sudoers).provide(
       elsif element =~ /\s*\S+\s*/
         hash[currentsymbol] << element.gsub(/\s/, '')
       else
-        raise Exception, "Malformed user spec line lhs: #{lhs}"
+        raise Puppet::Error, "Malformed user spec line lhs: #{lhs}"
       end
     end
   end 
@@ -118,7 +118,8 @@ Puppet::Type.type(:sudoers).provide(
   def self.prefetch_hook(records)
     # store comment name vars when we find them
     name,comment=nil
-    results = records.each do |record|
+    results = records.each_index do |index|
+      record = records[index]
       if(record[:record_type] == :comment)
         # if we are a namevar comment
 #puts "found a comment: #{record.to_yaml}"
@@ -140,7 +141,9 @@ Puppet::Type.type(:sudoers).provide(
             record[:name] = name
             name = nil
           else
-            Puppet.info "spec record not created by puppet"
+            fake_namevar = "fake_namevar_#{index}"
+            Puppet.warning "user spec record not created by puppet, adding fake namevar #{fake_namevar}"
+            record[:name] = fake_namevar
             # probably a pre-exting record not created by puppet
           end 
         end
@@ -184,7 +187,7 @@ Puppet::Type.type(:sudoers).provide(
     commands=self.array_convert(hash[:commands])
     str = "#Puppet NAMEVAR #{hash[:name]}"
     str << "\n#{users} #{hosts}=#{commands}"
-    Puppet.notice "adding line:  #{str}"
+    Puppet.debug "adding line:  #{str}"
     str
   end
 
@@ -195,7 +198,7 @@ Puppet::Type.type(:sudoers).provide(
     # since different attributes make sense based on ensure value (dir/file/symlink)
     items=self.array_convert(hash[:items])
     str = "#{hash[:sudo_alias]} #{hash[:name]}=#{items}"
-    Puppet.notice "adding line: #{str}"
+    Puppet.debug "adding line: #{str}"
     str
   end
 
@@ -204,7 +207,7 @@ Puppet::Type.type(:sudoers).provide(
   def self.default_to_line(hash)
     parameters=self.array_convert(hash[:parameters])
     str = "#{hash[:name]} #{parameters}"
-    Puppet.notice "Adding line #{str}"
+    Puppet.debug "Adding line #{str}"
     str
   end
 

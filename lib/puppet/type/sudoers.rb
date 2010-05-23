@@ -82,6 +82,11 @@ Defaults@host x=y,one=1,two=2
       #puts "params \n#{resource.original_parameters.to_yaml}\n"
       value
     end
+    validate do |name| 
+      if name =~ /^fake_namevar_\d+/
+        raise Puppet::Error, "cannot use reserved namevar #{name}"
+      end
+    end
   end
 
 
@@ -89,14 +94,15 @@ Defaults@host x=y,one=1,two=2
   # I changed this to be required. this will allow me to 
   # do more param checking based on type.
   #
-  newparam(:type) do
+  newproperty(:type) do
     desc "optional parameter used to determine what the record type is"
-    isrequired
-    validate do |type|
-      unless type =~ /(default|alias|user_spec)/
-        raise Puppet::Exception, "unexpected sudoers type #{type}" 
+    # why isnt this working?
+    validate do |my_type|
+      unless my_type =~ /(default|alias|user_spec)/
+        raise Puppet::Error, "unexpected sudoers type #{my_type}" 
       end
     end
+    isrequired
   end
 
   newproperty(:sudo_alias) do
@@ -164,16 +170,30 @@ Defaults@host x=y,one=1,two=2
   SUDOERS_DEFAULT = [:parameters]
   SUDOERS_ALIAS = [:sudo_alias, :items]
   SUDOERS_SPEC = [:users, :hosts, :commands]
+#
+# this does not work both ways for some reason
+#
+#
   validate do
-    if self[:type] == 'default'
-      checkprops(SUDOERS_DEFAULT)      
-    elsif self[:type] == 'alias'
-      checkprops(SUDOERS_ALIAS)      
-    elsif self[:type] == 'user_spec'
-      checkprops(SUDOERS_SPEC)      
+    # this if ensure if a little hackish - 
+    # balically, when initialize is called from self.instances
+    # none of the attributes are actually set (including type)
+    # the best way to tell if I was called by self.instances
+    # is to check if ensure has a value?
+    if self[:ensure]
+      if self.value(:type) == 'default'
+        checkprops(SUDOERS_DEFAULT)      
+      elsif self.value(:type) == 'alias'
+        checkprops(SUDOERS_ALIAS)      
+      elsif self.value(:type) == 'user_spec'
+        checkprops(SUDOERS_SPEC)      
+      elsif ! self[:type]
+        # this is only during purging (self.instances)
+        raise Puppet::Error, 'attribute type must be set for sudoers type'
+      end
     else
-      # this should not be possible
-      raise "Unknown type #{self[:type]}"
+      # this occurs with self.instances
+      # is there a better way?
     end
   end
 
@@ -181,8 +201,8 @@ Defaults@host x=y,one=1,two=2
 
     def checkprops(props)
       props.each do |prop|
-        unless self[prop.to_symbol]
-          raise Puppet::Exception, "missing attribute #{prop} for type #{type}"
+        unless self[prop.to_s]
+          raise Puppet::Error, "missing attribute #{prop} for type #{self[:type]}"
         end
       end
     end
