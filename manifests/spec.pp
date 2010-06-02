@@ -8,6 +8,7 @@
 define sudo::spec( 
   $ensure=present, 
   $users, $hosts, $commands, 
+  $comment='',
   $target='/etc/sudoers'
 ) {
   sudoers { $name:
@@ -16,6 +17,7 @@ define sudo::spec(
     users => $users,
     hosts => $hosts,
     commands => $commands,
+    comment => $comment,
     target => $target,
   }
 }

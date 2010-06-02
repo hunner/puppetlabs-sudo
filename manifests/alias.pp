@@ -7,6 +7,7 @@
 define sudo::alias( 
   $ensure=present, 
   $sudo_alias,  $items, 
+  $comment='',
   $target='/etc/sudoers'
 ) {
   sudoers { $name:
@@ -14,6 +15,7 @@ define sudo::alias(
     ensure => $ensure,
     sudo_alias => $sudo_alias,
     items => $items,
+    comment => $comment,
     target => $target,
   }
 }
