@@ -6,7 +6,7 @@ sudo::alias{'BLAH1':
   #target => '/tmp/sudo',
   sudo_alias => 'Cmnd_Alias',
   items => ['/bin/blah', '/bin/blah4', '/bin/blah2'],
-#  require => sudoers['BHAH2']
+  require => Sudo::alias['BHAH2']
 }
 sudo::spec{'blah4':
   #target => '/tmp/sudoers',
@@ -17,13 +17,13 @@ sudo::spec{'blah4':
 sudo::alias{'BLAH3':
   sudo_alias => 'Cmnd_Alias',
   items => ['/bin/blah', '/bin/blah4', '/bin/blah2'],
-  before => Sudoers['BHAH2']
+  before => Sudo::alias['BHAH2']
 }
 sudo::alias{'BHAH2':
   #target => '/tmp/sudoers',
   sudo_alias => 'Host_Alias',
   items => ['blah2', 'blah3', 'blah4', 'blah5'],
-#  require => Sudoers['blah4'],
+  require => Sudo::spec['blah4'],
 }
 sudo::defaults{'Defaults@host':
   parameters => ['x=y', 'one=1', 'two=2'],
