@@ -82,9 +82,12 @@ Defaults@host x=y,one=1,two=2
       #puts "params \n#{resource.original_parameters.to_yaml}\n"
       value
     end
+    # this fails for existing resources, just dont use fake_namevar stuff!
     validate do |name| 
       if name =~ /^fake_namevar_\d+/
-        raise Puppet::Error, "cannot use reserved namevar #{name}"
+        unless resource.original_parameters[:provider].get('record_type') == :parsed
+          raise Puppet::Error, "cannot use reserved namevar #{name}"
+        end
       end
     end
   end

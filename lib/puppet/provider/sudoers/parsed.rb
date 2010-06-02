@@ -66,6 +66,7 @@ Puppet::Type.type(:sudoers).provide(
 
   # parse existing user spec lines from sudoers
   def self.parse_user_spec(users_hosts, commands, hash) 
+#puts 'user spec'
     hash[:type] = 'user_spec'
     #hash[:name] = user
     #hash[:hosts] = hosts.gsub(/\s/, '').split(',')
@@ -109,15 +110,26 @@ Puppet::Type.type(:sudoers).provide(
     raise Puppet::Error, 'not supporting switching NAMEVAR between record types'
   end
   
+  #
+  # set the record at the specified index as skipped.
+  # set 
+
+  def self.skip_comment(records, comment_index)
+    if comment_index
+      records[comment_index][:skip] = true
+    end
+  end
+
   # I could use prefetch_hook to support multi-line entries
   # will use the prefetch_hook to determine if
   # the line before us is a commented namevar line
   # only used for user spec.
   # Most of this code is shameless taken from provider crontab.rb
-  # NAMEVAR comments leave me in need of a shower, but it seems to be the only way.
+  # NAMEVAR comments leave me in need of a shower, but it seems to be the only way. I am starting to like them.. is that bad?
+
   def self.prefetch_hook(records)
     # store comment name vars when we find them
-    name,comment=nil
+    name,comment,comment_index=nil
     results = records.each_index do |index|
       record = records[index]
       if(record[:record_type] == :comment)
@@ -128,13 +140,19 @@ Puppet::Type.type(:sudoers).provide(
           name = record[:name]
           record[:skip] = true
         elsif record[:comment] != nil
+          # get rid of old comment
+          skip_comment(records, comment_index)
           comment = record[:comment]
-          record[:skip] = true
+          comment_index = index
         end
       elsif(record[:record_type] == :parsed)
-        record[:comment] = comment
-        comment = nil 
+#
+# this associates the previous comment with a record.
+# I cant think of anyway to get around this.
        # if we are a spec record, check the namevar
+        record[:comment] = comment
+        skip_comment(records, comment_index)
+        comment=nil
         if record[:type] == 'user_spec'
           if name
             #puts "adding to a record"
@@ -142,11 +160,12 @@ Puppet::Type.type(:sudoers).provide(
             name = nil
           else
             fake_namevar = "fake_namevar_#{index}"
-            Puppet.warning "user spec record not created by puppet, adding fake namevar #{fake_namevar}"
+            Puppet.warning "user spec #{record[:line]} not created by puppet, adding fake namevar #{fake_namevar}"
             record[:name] = fake_namevar
-            # probably a pre-exting record not created by puppet
           end 
         end
+      else
+        skip_comment(records, comment_index)
       end
     end.reject{|record| record[:skip]}
     results
@@ -157,8 +176,9 @@ Puppet::Type.type(:sudoers).provide(
     #puts "\nEntering self.to_line for #{hash[:name]}"
     #puts "\n#{hash.to_yaml}\n"
 #    # dynamically call a function based on the value of hash[:type]
+#puts hash[:record_type]
     if(hash[:record_type] == :blank || hash[:record_type] == :comment)
-      hash[:line]
+      line = hash[:line]
     elsif(hash[:type] == 'alias')
       line = self.alias_to_line(hash) 
     elsif(hash[:type] == 'user_spec')
