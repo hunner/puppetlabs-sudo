@@ -84,10 +84,10 @@ Defaults@host x=y,one=1,two=2
     end
     # this fails for existing resources, just dont use fake_namevar stuff!
     validate do |name| 
-      if name =~ /^fake_namevar_\d+/
-        unless resource.original_parameters[:provider].get('record_type') == :parsed
-          raise Puppet::Error, "cannot use reserved namevar #{name}"
-        end
+      # please forgive this dirty hack, but only managed lines can 
+      # have lines
+      if (name =~ /^fake_namevar_\d+/ and resource.line)
+        raise Puppet::Error, "cannot use reserved namevar #{name}"
       end
     end
   end
