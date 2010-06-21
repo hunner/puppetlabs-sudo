@@ -75,19 +75,18 @@ Defaults@host x=y,one=1,two=2
   # support absent and present (also purge -> true)
   ensurable
 
-  newparam(:name) do
+  newparam(:name, :namevar => true) do
     desc "Either the name of the alias, default, or arbitrary unique string for user specifications"
-    isnamevar
     munge do |value|
       #puts "params \n#{resource.original_parameters.to_yaml}\n"
       value
     end
     # this fails for existing resources, just dont use fake_namevar stuff!
     validate do |name| 
-      if name =~ /^fake_namevar_\d+/
-        unless resource.original_parameters[:provider].get('record_type') == :parsed
-          raise Puppet::Error, "cannot use reserved namevar #{name}"
-        end
+      # please forgive this dirty hack, but only managed lines can 
+      # have lines
+      if (name =~ /^fake_namevar_\d+/ and resource.line)
+        raise Puppet::Error, "cannot use reserved namevar #{name}"
       end
     end
   end
