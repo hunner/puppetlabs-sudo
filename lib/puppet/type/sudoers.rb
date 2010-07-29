@@ -78,7 +78,6 @@ Defaults@host x=y,one=1,two=2
   newparam(:name, :namevar => true) do
     desc "Either the name of the alias, default, or arbitrary unique string for user specifications"
     munge do |value|
-      #puts "params \n#{resource.original_parameters.to_yaml}\n"
       value
     end
     # this fails for existing resources, just dont use fake_namevar stuff!
@@ -140,7 +139,7 @@ Defaults@host x=y,one=1,two=2
   newproperty(:users, :array_matching => :all) do
     desc "list of users for user spec"
     validate do |value|
-      if value =~ /^\s*Defaults/
+      if value == 'Defaults'
         raise Puppet::Error, 'Cannot specify user named Defaults in sudoers'
       end
     end
@@ -150,6 +149,7 @@ Defaults@host x=y,one=1,two=2
     desc "list of hosts for user spec"
   end
 
+  # maybe I should do more validation for commands
   newproperty(:commands, :array_matching => :all) do
     desc "commands to run"
   end
@@ -192,6 +192,8 @@ Defaults@host x=y,one=1,two=2
       elsif ! self[:type]
         # this is only during purging (self.instances)
         raise Puppet::Error, 'attribute type must be set for sudoers type'
+      else
+        raise Puppet::Error, "type value #{self[:type]} is not valid"
       end
     else
       # this occurs with self.instances
@@ -208,33 +210,5 @@ Defaults@host x=y,one=1,two=2
         end
       end
     end
-#    if self[:sudo_alias] 
-#      self[:type] = 'alias'
-#      checkprops(SUDOERS_DEFAULT, SUDOERS_SPEC)
-#    elsif self[:parameters]
-#      self[:type] = 'default'
-#      checkprops(SUDOERS_ALIAS, SUDOERS_SPEC)
-#    elsif self[:users]
-#      self[:type] = 'user_spec'
-#      checkprops(SUDOERS_ALIAS, SUDOERS_DEFAULT)
-#    else
-#      # these are parsed records, do nothing 
-#    end
-    #puts self.should('sudo_alias')
-    #puts self.to_yaml  
-    #puts self.eachproperty do |x| puts x end
-#  end
-
-#  private
-
-  # check that we dont have any conflicting attributes
-#  def checkprops(array_one, array_two)
-#    combined = Array.new.concat(array_one).concat(array_two)
-#    combined.each do |item|
-#      if self[item.to_sym]
-#        raise Puppet::Error, "Unexpected attribute #{item} for sudo record type #{self[:type]}"
-#      end
-#    end 
-#  end
 end
  
