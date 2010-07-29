@@ -7,7 +7,48 @@ module Helpers
   }
 
   def self.included(obj)
-    obj.instance_eval { attr_reader :valid_params }
+    obj.instance_eval { attr_accessor :valid_params }
+  end
+  # self is available at the describe level
+  def restricted_params(key, params, opts={}, invalid='invalid')
+    params.each do |param|
+      #let(:param) {param}
+      #let(:key) {key}
+      with(valid_params_with({key => param}))[key].should == param
+    end
+    lambda {with(valid_params_with({key => invalid}))}.should raise_error
+  end
+
+  # test that a list of attributes are required 
+  def should_require(*keys)
+    keys.each do |k|
+    lambda { with(valid_params_without(k)) }.should raise_error Puppet::Error
+    end
+  end
+  # tests that an attribute should accept a value
+  def should_accept(attr, value)
+    k=attr.to_sym
+    with(valid_params_with({k => value}))[k].should == value
+  end
+  # tests that an attribute should not accept a value
+  def should_not_accept(attr, value)
+    k=attr.to_sym
+    lambda {with(valid_params_with({k => value}))}.should raise_error Puppet::Error
+  end
+
+
+  # tests that an attribute accepts an array
+  #  - single element array, multiple element array
+  #  - string is converted into an array
+  def should_accept_array(attr, value=['one', 'two'])
+    should_accept(attr, value)
+    should_accept(attr, value.first.to_a )
+    with(valid_params_with({attr => value.first}))[attr].should == value.first.to_a
+  end
+
+  # test that an attribute defaults to a value
+  def should_default_to(attr, defaultto)
+    with(valid_params_without(attr.to_sym))[:comment].should == defaultto
   end
 
   # Creates a new resource of +type+
@@ -49,11 +90,11 @@ module Helpers
   end
 
   # Stub the default provider to get around confines for testing
-  def stub_default_provider!
+  def stub_default_provider!(name)
     unless defined?(@type)
       raise ArgumentError, "@type must be set"
     end
-    provider = @type.provider(:ec2)
+    provider = @type.provider(name.to_sym)
     @type.stubs(:defaultprovider => provider)
   end
 
