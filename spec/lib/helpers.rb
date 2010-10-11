@@ -103,3 +103,10 @@ module Helpers
   end
     
 end
+#Spec::Example::ExampleGroupFactory.register(:provider, ProviderExampleGroup)
+#
+# Outside wrapper to lookup a provider and start the spec using ProviderExampleGroup
+#def describe_provider(type_name, provider_name, options = {}, &block)
+#    provider_class = Puppet::Type.type(type_name).provider(provider_name)
+#      describe(provider_class, options.merge(:type => :provider), &block)
+#end
