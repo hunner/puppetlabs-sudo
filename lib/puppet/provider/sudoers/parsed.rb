@@ -60,6 +60,7 @@ Puppet::Type.type(:sudoers).provide(
     hash[:type] = 'alias'
     hash[:sudo_alias] = sudo_alias
     hash[:name] = name
+    raise Puppet::Error, "Invalid alias name, #{name}" unless hash[:name] =~ /[A-Z]([A-Z][0-9]_)*/
     hash[:items] = clean_list(items) 
     hash 
   end
@@ -72,7 +73,7 @@ Puppet::Type.type(:sudoers).provide(
     #hash[:hosts] = hosts.gsub(/\s/, '').split(',')
     hash[:commands] = clean_list(commands)
     hash_array = users_hosts.split(',')  
-    # every element will be a user until the hit the delim
+    # every element will be a user until the whitespace delim
     currentsymbol = :users
     hash[:users] = Array.new
     hash[:hosts] = Array.new
@@ -86,15 +87,18 @@ Puppet::Type.type(:sudoers).provide(
           raise Puppet::Error, 'found more than one whitespace delim in users_hosts' 
         end
         # sweet we found the delim between user and host
-        hash[currentsymbol] << user.gsub(/\s/, '')
+        hash[:users] << user.gsub(/\s/, '')
+        hash[:hosts] << host.gsub(/\s/, '')
         # now everything else will be a host
         currentsymbol=:hosts
-        hash[currentsymbol] << host.gsub(/\s/, '')
       elsif element =~ /\s*\S+\s*/
         hash[currentsymbol] << element.gsub(/\s/, '')
       else
         raise Puppet::Error, "Malformed user spec line lhs: #{lhs}"
       end
+    end
+    if hash[:users].empty? or hash[:hosts].empty?
+      raise Puppet::Error, "Malformed user spec line #{hash[:line]}, must specify user and host"
     end
   end 
 
