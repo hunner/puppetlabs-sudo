@@ -67,6 +67,7 @@ describe Puppet::Type.type(:sudoers) do
       @valid_params = @alias_params
     end
     describe 'require attributes' do
+      # isrequired in puppet is broken
       #self.should_require([:sudo_alias, :items])
     end
     describe "sudo_alias" do
@@ -166,57 +167,4 @@ describe Puppet::Type.type(:sudoers) do
       end
     end
   end
-#  describe "the user parameter" do
-#    it 'should support setting a value' do
-#      with(valid_params)[:user].should == valid_params[:user]
-#    end
-#    # I think isrequired is broken
-#    it 'should be required' do
-#      specifying(valid_params_without(:user)).should raise_error(Puppet::Error)
-#    end
-#  end
-#
-#  describe "the password parameter" do
-#    it 'should support setting a value' do
-#      with(valid_params)[:password].should == valid_params[:password]
-#    end
-#    it 'should be required' do
-#      specifying(valid_params_without(:password)).should raise_error(Puppet::Error)
-#    end
-#  end
-#  
-#  describe "the image parameter" do
-#    it 'should be required' do
-#      specifying(valid_params_without(:image)).should raise_error(Puppet::Error)
-#    end
-#    it 'should support setting a value' do
-#      with(valid_params)[:image].should == valid_params[:image]
-#    end
-#  end
-#
-#  describe "the desc parameter" do
-#    it 'should not be required' do
-#      specifying(valid_params_without(:desc)).should_not raise_error(Puppet::Error)
-#    end
-#    it 'should accept a value' do
-#      with(valid_params)[:desc].should == 'description'
-#    end
-#  end
-#
-#  describe 'the type parameter' do
-#    it 'should accept valid ec2 types' do
-#      @valid_types.each do |t|
-#        with(valid_params_with({:type => t}))[:type].should == t
-#      end
-#    end
-#    it 'should not accept invalid types' do
-#      specifying(:type => 'm1.freakin-huge').should raise_error(Puppet::Error) 
-#    end
-#    it 'should default to m1.small' do
-#      with(valid_params_without(:type)) do |resource|
-#        resource[:type].should == 'm1.small'
-#      end
-#    end
-#  end
-#  end
 end
