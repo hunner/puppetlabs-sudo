@@ -187,6 +187,9 @@ Defaults@host x=y,one=1,two=2
         checkprops(SUDOERS_DEFAULT)      
       elsif self.value(:type) == 'alias'
         checkprops(SUDOERS_ALIAS)      
+        unless self[:name] =~ /^[A-Z]([A-Z]|[0-9]|_)*$/
+          raise Puppet::Error, "alias names #{self[:name]} does not match [A-Z]([A-Z][0-9]_)*"
+        end
       elsif self.value(:type) == 'user_spec'
         checkprops(SUDOERS_SPEC)      
       elsif ! self[:type]
