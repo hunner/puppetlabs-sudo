@@ -8,5 +8,5 @@ sudoers{'BLAH4':
   users => ['dan', 'dan4', 'dan3'],
   hosts => ['localhost', 'localhost2'],
   commands => ['/bin/true blah', '/bin/false de', '/bin/duder/dude blah'],
-  type => 'spec'
+  type => 'user_spec'
 }
