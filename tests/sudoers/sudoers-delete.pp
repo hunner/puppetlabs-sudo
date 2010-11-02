@@ -1,18 +1,18 @@
-sudoers { 'blah1':
+sudoers { 'BLAH1':
   target => '/tmp/sudoers',
   ensure => absent,
   sudo_alias => 'Cmnd_Alias',
   items => ['blah4', 'blah2'],
   type => 'alias',
 }
-sudoers { 'blah2':
+sudoers { 'BLAH2':
   target => '/tmp/sudoers',
   ensure => absent,
   sudo_alias => 'Host_Alias',
   items => ['blah2', 'blah3'],
   type => 'alias',
 }
-sudoers { 'blah3':
+sudoers { 'BLAH3':
   target => '/tmp/sudoers',
   ensure => absent,
   users => 'dan',
