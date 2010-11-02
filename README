@@ -4,12 +4,10 @@ Examples of usage can be found in the tests directory. The type also has rdocs.
 
 Sudoers supports ensure => (present|absent)
 
-
 *TODO(stuff that I will fix soon)
 
   1. Setting up autorequires for existing aliases, but this order would only be followed if both records were created.
-  2. A record (as determined by NAMEVAR) cannot switch between types. Currently throws an exception.
-  3 Shouldn't log flush or to_line events because they occur too often (working on this per issue with parsedfile).
+  2 Shouldn't log flush or to_line events because they occur too often (working on this per issue with parsedfile).
 
 LIMITATIONS (things I will not fix soon):
   1. No support for parsing multi-line files (with \). I may add this in the next revision.
