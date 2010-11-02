@@ -23,7 +23,7 @@ sudo::alias { 'BHAH2':
   ensure => present,
   sudo_alias => 'Host_Alias',
   items => ['blah2', 'blah3', 'blah4', 'blah5'],
-  require => Sudo::spec['blah4'],
+  require => Sudo::Spec['blah4'],
 }
 sudo::defaults { 'Defaults@host':
   parameters => ['x=y', 'one=1', 'two=2'],
