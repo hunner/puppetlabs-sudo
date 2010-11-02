@@ -241,7 +241,7 @@ Puppet::Type.type(:sudoers).provide(
   #
   def self.verify_sudo_line(line)
     # path is currently hardcoded, needs to be fixed
-    base = '/etc/sudoers' 
+    base = '/tmp/' 
     # find a tmp file that does not exist
     # this should be built into Ruby?
     path = "#{base}.puppettmp_#{rand(10000)}"
@@ -253,9 +253,8 @@ Puppet::Type.type(:sudoers).provide(
       visudo("-cf", path)
     rescue => detail
       raise Puppet::Error, "visudo failed for line: #{line}, #{detail}"
-    ensure 
-      File.unlink(path) if FileTest.exists?(path)
     end
+    File.unlink(path) if FileTest.exists?(path)
   end
 
   # convert arrays into to , joined lists
