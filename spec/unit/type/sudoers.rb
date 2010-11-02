@@ -59,6 +59,7 @@ describe Puppet::Type.type(:sudoers) do
   describe "the user alias" do
     before(:each) do
       @alias_params = @init_params.merge({
+        :name => 'NAME',
         :type => 'alias',
         :sudo_alias => 'Cmnd_Alias',
         :items => 'item1'
@@ -99,6 +100,11 @@ describe Puppet::Type.type(:sudoers) do
       end
       it 'should not accept other type' do
         lambda { with(valid_params_with({:type => 'user_spec'}))}.should raise_error
+      end
+    end
+    describe 'name' do 
+      it 'should only accept [A-Z]([A-Z][0-9]_)*' do
+        lambda { with(valid_params_with({:name => 'name'}))}.should raise_error(Puppet::Error)
       end
     end
   end
