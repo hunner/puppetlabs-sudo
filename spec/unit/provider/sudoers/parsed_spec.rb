@@ -116,7 +116,7 @@ describe Puppet::Type.type(:sudoers).provider(:parsed) do
 
   end
   
-  context "failing for commands containing =",:issue => 1 do
+  context "failing for commands containing =",:issue => 2 do
     before do
       @init_records = {:type => 'user_spec'} 
     end
