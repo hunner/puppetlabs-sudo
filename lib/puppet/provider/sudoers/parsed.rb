@@ -45,7 +45,7 @@ Puppet::Type.type(:sudoers).provide(
       elsif (hash[:line] =~ /^\s*(Defaults\S*)\s*(.*)$/)
         Puppet.debug("parsed line as Defaults")
         parsed.parse_defaults($1, $2, hash)
-      elsif (hash[:line] =~ /^\s*(.*)?=(.*)$/)
+      elsif (hash[:line] =~ /^\s*(.*?)?=(.*)$/)
         Puppet.debug("parsed line as User Spec")
         parsed.parse_user_spec($1, $2, hash)
       else 
