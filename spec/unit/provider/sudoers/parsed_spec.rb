@@ -115,5 +115,18 @@ describe Puppet::Type.type(:sudoers).provider(:parsed) do
   # test to_line
 
   end
+  
+  context "failing for commands containing =",:issue => 2 do
+    before do
+      @init_records = {:type => 'user_spec'} 
+    end
+
+    it "can parse users and hosts for lines containing =" do
+      line = "root ALL=(ALL) NOPASSWD: /bin/grep --color=auto example /var/log/messages"
+      lambda{ 
+        @provider.parse_line(line)
+      }.should_not raise_error
+    end
+  end
 end
 
