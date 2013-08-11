@@ -1,7 +1,7 @@
-# Defined resoruce to manage sudoers user specification lines.
+# Defined resource to manage sudoers user specification lines.
 # 
 #  attributes:
-#   * name - arbitrary string used to determine uniquemenss
+#   * name - arbitrary string used to determine uniqueness
 #   * users - list of users
 #   * hosts - list of hosts
 #   * commands - list of commands
